@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simulatore Economia</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      background: #f0f0f0;
+    }
+    header {
+      padding: 1rem;
+      background: #222;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    input {
+      padding: 0.5rem;
+      font-size: 1rem;
+      width: 50%;
+    }
+    .item {
+      background: white;
+      margin: 0.5rem;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .item span {
+      font-size: 1.2rem;
+    }
+    button {
+      padding: 0.3rem 0.8rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .buy {
+      background: green;
+      color: white;
+    }
+    .sell {
+      background: red;
+      color: white;
+      margin-right: 0.5rem;
+    }
+    #money {
+      font-size: 1rem;
+    }
+    #items {
+      padding: 1rem;
+    }
+    .nav-btn {
+      background: #444;
+      color: white;
+      padding: 0.4rem 0.8rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="nav-btn" onclick="viewInventory()">Vedi articoli</button>
+    <input type="text" id="search" placeholder="Cerca oggetti..." oninput="renderItems()" />
+    <div id="money">💶 1000€</div>
+  </header>
+
+  <div id="items"></div>
+
+  <script>
+    let money = parseFloat(localStorage.getItem("money") || "1000");
+    let inventory = JSON.parse(localStorage.getItem("inventory") || "{}");
+
+    const items = [
+      { name: "Auto", emoji: "🚗", price: 12000 },
+      { name: "Bici", emoji: "🚲", price: 300 },
+      { name: "Casa", emoji: "🏠", price: 100000 },
+      { name: "Cellulare", emoji: "📱", price: 800 },
+      { name: "Computer", emoji: "💻", price: 1500 },
+      { name: "Gioco", emoji: "🎮", price: 60 },
+      { name: "Libro", emoji: "📚", price: 20 },
+      { name: "Orologio", emoji: "⌚", price: 200 },
+      { name: "TV", emoji: "📺", price: 700 },
+      { name: "Zaino", emoji: "🎒", price: 50 },
+    ];
+
+    function save() {
+      localStorage.setItem("money", money);
+      localStorage.setItem("inventory", JSON.stringify(inventory));
+    }
+
+    function renderItems() {
+      const list = document.getElementById("items");
+      list.innerHTML = "";
+      const q = document.getElementById("search").value.toLowerCase();
+
+      items
+        .filter(item => item.name.toLowerCase().includes(q))
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(item => {
+          const qty = inventory[item.name] || 0;
+          const div = document.createElement("div");
+          div.className = "item";
+          div.innerHTML = `
+            <span>${item.emoji} ${item.name}<br>💶 ${item.price} — Hai: ${qty}</span>
+            <div>
+              <button class="sell" onclick="sell('${item.name}', ${item.price})">-</button>
+              <button class="buy" onclick="buy('${item.name}', ${item.price})">+</button>
+            </div>
+          `;
+          list.appendChild(div);
+        });
+
+      document.getElementById("money").innerText = `💶 ${money.toFixed(2)}€`;
+    }
+
+    function buy(name, price) {
+      if (money >= price) {
+        money -= price;
+        inventory[name] = (inventory[name] || 0) + 1;
+        save();
+        renderItems();
+      } else {
+        alert("Non hai abbastanza soldi!");
+      }
+    }
+
+    function sell(name, price) {
+      if ((inventory[name] || 0) > 0) {
+        money += price;
+        inventory[name]--;
+        save();
+        renderItems();
+      }
+    }
+
+    function viewInventory() {
+      let list = Object.entries(inventory)
+        .filter(([_, qty]) => qty > 0)
+        .map(([name, qty]) => {
+          const item = items.find(i => i.name === name);
+          return `${item.emoji} ${name} — ${qty}`;
+        });
+
+      alert("📦 I tuoi articoli:\n\n" + (list.length ? list.join("\n") : "Nessun articolo."));
+    }
+
+    renderItems();
+  </script>
+</body>
+</html>
